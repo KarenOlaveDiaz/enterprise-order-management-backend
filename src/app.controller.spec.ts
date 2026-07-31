@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import type { HealthResponse } from './app.service';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -14,9 +15,14 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('health', () => {
+    it('should return the API health status', () => {
+      const result: HealthResponse = appController.getHealth();
+
+      expect(result.status).toBe('ok');
+      expect(result.service).toBe('enterprise-order-management-api');
+      expect(typeof result.timestamp).toBe('string');
+      expect(Number.isNaN(Date.parse(result.timestamp))).toBe(false);
     });
   });
 });
