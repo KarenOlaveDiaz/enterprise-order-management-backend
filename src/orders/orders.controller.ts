@@ -23,7 +23,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import type { Order } from './interfaces/order.interface';
+import type { Order } from '../generated/prisma/client';
 import { OrdersService } from './orders.service';
 
 @ApiTags('Orders')
@@ -37,7 +37,7 @@ export class OrdersController {
   @ApiOperation({ summary: 'List all orders' })
   @ApiOkResponse({ description: 'Orders returned successfully' })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
-  findAll(): Order[] {
+  findAll(): Promise<Order[]> {
     return this.ordersService.findAll();
   }
 
@@ -45,14 +45,14 @@ export class OrdersController {
   @ApiOperation({ summary: 'Get an order by id' })
   @ApiOkResponse({ description: 'Order returned successfully' })
   @ApiNotFoundResponse({ description: 'Order not found' })
-  findOne(@Param('id') id: string): Order {
+  findOne(@Param('id') id: string): Promise<Order> {
     return this.ordersService.findOne(id);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create an order' })
   @ApiCreatedResponse({ description: 'Order created successfully' })
-  create(@Body() createOrderDto: CreateOrderDto): Order {
+  create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
     return this.ordersService.create(createOrderDto);
   }
 
@@ -63,7 +63,7 @@ export class OrdersController {
   updateStatus(
     @Param('id') id: string,
     @Body() updateOrderStatusDto: UpdateOrderStatusDto,
-  ): Order {
+  ): Promise<Order> {
     return this.ordersService.updateStatus(id, updateOrderStatusDto);
   }
 
@@ -72,7 +72,7 @@ export class OrdersController {
   @ApiOperation({ summary: 'Delete an order' })
   @ApiNoContentResponse({ description: 'Order deleted successfully' })
   @ApiNotFoundResponse({ description: 'Order not found' })
-  remove(@Param('id') id: string): void {
-    this.ordersService.remove(id);
+  async remove(@Param('id') id: string): Promise<void> {
+    await this.ordersService.remove(id);
   }
 }

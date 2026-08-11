@@ -1,30 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import type { Order } from '../generated/prisma/client';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import type { Order } from './interfaces/order.interface';
+import { OrdersRepository } from './repositories/orders.repository';
 
 @Injectable()
 export class OrdersService {
-  private readonly orders: Order[] = [
-    {
-      id: randomUUID(),
-      customerName: 'Demo Customer',
-      customerEmail: 'customer@orderflow.dev',
-      product: 'Enterprise Monitor',
-      quantity: 2,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  ];
+  constructor(private readonly ordersRepository: OrdersRepository) {}
 
-  findAll(): Order[] {
-    return this.orders;
+  findAll(): Promise<Order[]> {
+    return this.ordersRepository.findAll();
   }
 
-  findOne(id: string): Order {
-    const order = this.orders.find((item) => item.id === id);
+  async findOne(id: string): Promise<Order> {
+    const order = await this.ordersRepository.findOne(id);
 
     if (!order) {
       throw new NotFoundException(`Order with id ${id} was not found`);
@@ -33,38 +22,22 @@ export class OrdersService {
     return order;
   }
 
-  create(createOrderDto: CreateOrderDto): Order {
-    const timestamp = new Date().toISOString();
-
-    const order: Order = {
-      id: randomUUID(),
-      ...createOrderDto,
-      status: 'pending',
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-
-    this.orders.push(order);
-
-    return order;
+  create(createOrderDto: CreateOrderDto): Promise<Order> {
+    return this.ordersRepository.create(createOrderDto);
   }
 
-  updateStatus(id: string, updateOrderStatusDto: UpdateOrderStatusDto): Order {
-    const order = this.findOne(id);
+  async updateStatus(
+    id: string,
+    updateOrderStatusDto: UpdateOrderStatusDto,
+  ): Promise<Order> {
+    await this.findOne(id);
 
-    order.status = updateOrderStatusDto.status;
-    order.updatedAt = new Date().toISOString();
-
-    return order;
+    return this.ordersRepository.updateStatus(id, updateOrderStatusDto.status);
   }
 
-  remove(id: string): void {
-    const orderIndex = this.orders.findIndex((order) => order.id === id);
+  async remove(id: string): Promise<void> {
+    await this.findOne(id);
 
-    if (orderIndex === -1) {
-      throw new NotFoundException(`Order with id ${id} was not found`);
-    }
-
-    this.orders.splice(orderIndex, 1);
+    await this.ordersRepository.remove(id);
   }
 }
