@@ -1,7 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compareSync, hashSync } from 'bcryptjs';
+
 import { LoginDto } from './dto/login.dto';
+import { UserRole } from './enums/user-role.enum';
 import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 
 interface StoredUser extends AuthenticatedUser {
@@ -15,30 +17,46 @@ export interface LoginResponse {
 
 @Injectable()
 export class AuthService {
-  private readonly demoUser: StoredUser = {
-    id: '1',
-    name: 'Portfolio Administrator',
-    email: 'admin@orderflow.dev',
-    role: 'admin',
-    passwordHash: hashSync('Admin123!', 10),
-  };
+  private readonly users: StoredUser[] = [
+    {
+      id: '1',
+      name: 'Portfolio Administrator',
+      email: 'admin@orderflow.dev',
+      role: UserRole.ADMIN,
+      passwordHash: hashSync('Admin123!', 10),
+    },
+    {
+      id: '2',
+      name: 'Portfolio Demo',
+      email: 'demo@orderflow.dev',
+      role: UserRole.DEMO,
+      passwordHash: hashSync('Demo123!', 10),
+    },
+  ];
 
   constructor(private readonly jwtService: JwtService) {}
 
   async login(loginDto: LoginDto): Promise<LoginResponse> {
-    const emailMatches =
-      loginDto.email.toLowerCase() === this.demoUser.email.toLowerCase();
+    const normalizedEmail = loginDto.email.trim().toLowerCase();
 
-    const passwordMatches = compareSync(
-      loginDto.password,
-      this.demoUser.passwordHash,
+    const storedUser = this.users.find(
+      (user) => user.email.toLowerCase() === normalizedEmail,
     );
 
-    if (!emailMatches || !passwordMatches) {
+    if (!storedUser) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const user = this.toAuthenticatedUser(this.demoUser);
+    const passwordMatches = compareSync(
+      loginDto.password,
+      storedUser.passwordHash,
+    );
+
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const user = this.toAuthenticatedUser(storedUser);
 
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
