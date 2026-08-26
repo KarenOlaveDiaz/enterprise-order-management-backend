@@ -25,10 +25,13 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import type { Order } from '../generated/prisma/client';
 import { OrdersService } from './orders.service';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
@@ -49,6 +52,7 @@ export class OrdersController {
     return this.ordersService.findOne(id);
   }
 
+  @Roles(UserRole.ADMIN)
   @Post()
   @ApiOperation({ summary: 'Create an order' })
   @ApiCreatedResponse({ description: 'Order created successfully' })
@@ -56,6 +60,7 @@ export class OrdersController {
     return this.ordersService.create(createOrderDto);
   }
 
+  @Roles(UserRole.ADMIN)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update an order status' })
   @ApiOkResponse({ description: 'Order status updated successfully' })
@@ -67,6 +72,7 @@ export class OrdersController {
     return this.ordersService.updateStatus(id, updateOrderStatusDto);
   }
 
+  @Roles(UserRole.ADMIN)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an order' })
