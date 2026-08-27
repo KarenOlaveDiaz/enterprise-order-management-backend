@@ -1,0 +1,48 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://user:password@localhost:5432/orderflow
+          DIRECT_URL: postgresql://user:password@localhost:5432/orderflow
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+      - name: Build application
+        run: npm run build
