@@ -43,7 +43,7 @@ async function bootstrap(): Promise<void> {
 
   app.use(helmet());
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   console.log(`API running at http://localhost:${port}/api`);
   console.log(`Swagger available at http://localhost:${port}/api/docs`);
